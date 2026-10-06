@@ -193,3 +193,6 @@ obj-$(CONFIG_GNSS)		+= gnss/
 obj-$(CONFIG_INTERCONNECT)     += interconnect/
 obj-$(CONFIG_SWITCH)            += switch/
 obj-$(CONFIG_NXP_P73_DEVICES) += p73-spi/
+
+# KernelSU-Next (legacy), see KernelSU-Next/NASGOROS.md.
+obj-$(CONFIG_KSU)		+= kernelsu/

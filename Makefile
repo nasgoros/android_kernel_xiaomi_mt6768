@@ -1207,6 +1207,12 @@ PHONY += $(vmlinux-dirs)
 $(vmlinux-dirs): prepare scripts
 	$(Q)$(MAKE) $(build)=$@ need-builtin=1
 
+# KernelSU-Next includes SELinux headers, including the generated flask.h:
+# build drivers/ only after security/ has generated it.
+ifdef CONFIG_KSU
+drivers: security
+endif
+
 define filechk_kernel.release
 	echo "$(KERNELVERSION)$$($(CONFIG_SHELL) $(srctree)/scripts/setlocalversion \
 		$(srctree) $(BRANCH) $(KMI_GENERATION))"
