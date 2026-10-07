@@ -23,6 +23,51 @@
 #include "hook/hook_manager.h"
 #include "feature/kernel_umount.h"
 #include "compat/kernel_compat.h"
+#ifdef CONFIG_KSU_SUSFS
+#include <linux/susfs_def.h>
+#include "selinux/selinux.h"
+
+static inline bool is_zygote_isolated_service_uid(uid_t uid)
+{
+    uid %= 100000;
+    return (uid >= 99000 && uid < 100000);
+}
+
+static inline bool is_zygote_normal_app_uid(uid_t uid)
+{
+    uid %= 100000;
+    return (uid >= 10000 && uid < 19999);
+}
+
+extern u32 susfs_zygote_sid;
+extern struct work_struct susfs_extra_works;
+
+// Should SUSFS treat the process zygote is spawning as umounted?
+static bool susfs_should_mark_umounted(uid_t new_uid)
+{
+    // We only interest in process spawned by zygote. The hook can be
+    // reached more than once per process, so skip already flagged ones.
+    if (!susfs_is_sid_equal(current_cred(), susfs_zygote_sid) ||
+        susfs_is_current_proc_umounted())
+        return false;
+
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+    // Isolated services are always umounted
+    if (is_zygote_isolated_service_uid(new_uid))
+        return true;
+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+
+    return is_zygote_normal_app_uid(new_uid) && ksu_uid_should_umount(new_uid);
+}
+
+static void ksu_handle_extra_susfs_work(void)
+{
+    // Defer the extra works (e.g. sus_path_loop) to a workqueue so the
+    // spawning process is not blocked here.
+    if (!work_pending(&susfs_extra_works))
+        schedule_work(&susfs_extra_works);
+}
+#endif // #ifdef CONFIG_KSU_SUSFS
 
 int ksu_handle_setresuid(uid_t old_uid, uid_t new_uid)
 {
@@ -69,6 +114,13 @@ int ksu_handle_setresuid(uid_t old_uid, uid_t new_uid)
 
     // Handle kernel umount
     ksu_handle_umount(old_uid, new_uid);
+
+#ifdef CONFIG_KSU_SUSFS
+    if (susfs_should_mark_umounted(new_uid)) {
+        ksu_handle_extra_susfs_work();
+        susfs_set_current_proc_umounted();
+    }
+#endif // #ifdef CONFIG_KSU_SUSFS
 
     return 0;
 }

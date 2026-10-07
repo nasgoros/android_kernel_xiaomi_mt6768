@@ -19,6 +19,9 @@
 #include "ksu.h"
 #include "feature/sulog.h"
 #include "infra/file_wrapper.h"
+#ifdef CONFIG_KSU_SUSFS
+#include <linux/susfs.h>
+#endif // #ifdef CONFIG_KSU_SUSFS
 #include "selinux/selinux.h"
 #include "feature/selinux_hide.h"
 #include "feature/adb_root.h"
@@ -101,6 +104,11 @@ module_param_named(bundled, ksu_bundled, bool, 0);
 
 int __init kernelsu_init(void)
 {
+#ifdef KSU_MANAGER_PACKAGE
+	pr_info("welcome to KernelSU version " __stringify(KERNEL_SU_VERSION) ", package name " KSU_MANAGER_PACKAGE "\n");
+#else
+	pr_info("welcome to KernelSU version " __stringify(KERNEL_SU_VERSION) "\n");
+#endif
 #ifdef MODULE
 	ksu_late_loaded = (current->pid != 1);
 #else
@@ -176,6 +184,10 @@ int __init kernelsu_init(void)
 		ksu_allowlist_init();
 
 		ksu_throne_tracker_init();
+
+#ifdef CONFIG_KSU_SUSFS
+    	susfs_init();
+#endif // #ifdef CONFIG_KSU_SUSFS
 
 		ksu_ksud_init();
 

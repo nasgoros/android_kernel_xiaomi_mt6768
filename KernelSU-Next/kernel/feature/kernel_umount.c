@@ -79,7 +79,14 @@ static void ksu_sys_umount(const char *mnt, int flags)
 
 #endif
 
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+extern void susfs_try_umount(uid_t uid);
+
+// Also used by fs/susfs.c for its own try_umount list
+void try_umount(const char *mnt, int flags)
+#else
 static void try_umount(const char *mnt, int flags)
+#endif // #ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
 {
 	struct path path;
 	int err = kern_path(mnt, 0, &path);
@@ -103,6 +110,11 @@ static void umount_tw_func(struct callback_head *cb)
 {
 	struct umount_tw *tw = container_of(cb, struct umount_tw, cb);
 	const struct cred *saved = override_creds(ksu_cred);
+
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+	// Umount the SUSFS try_umount list before KernelSU's own list
+	susfs_try_umount(current_real_cred()->uid.val);
+#endif // #ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
 
     struct mount_entry *entry;
     down_read(&mount_list_lock);
