@@ -176,6 +176,12 @@ ifneq ($(HAVE_KSU_HOOK),0)
 $(error -- KernelSU-Next: No hooks were defined, please integrate manual hooks in your kernel!)
 endif
 
+# Some vendor/CIP 4.19 trees backport copy_to_kernel_nofault() (5.8) and drop
+# probe_kernel_write(); use the new name when it is available.
+ifeq ($(shell grep -q "copy_to_kernel_nofault" $(srctree)/include/linux/uaccess.h; echo $$?),0)
+ccflags-y += -DKSU_HAS_COPY_TO_KERNEL_NOFAULT
+endif
+
 # some backports
 ifneq ($(shell grep -Eq "^static int can_umount" $(srctree)/fs/namespace.c; echo $$?),0)
 $(info -- KSU_NEXT: adding function 'static int can_umount(const struct path *path, int flags);' to $(srctree)/fs/namespace.c)
