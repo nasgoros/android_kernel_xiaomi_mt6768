@@ -10,7 +10,10 @@
 // 3: scoped su-session driver fd
 // 4: add KSU_GET_INFO_FLAG_BUNDLED
 // 5: add EVENT_SERVICES with a start/skip result
-#define KERNEL_SU_UAPI_VERSION 5
+// nasgorOS: report 4 to match the released manager (v3.4.0, UAPI 4), which
+// otherwise warns "manager version too low". EVENT_SERVICES is additive and
+// still handled. Restore 5 once a released manager uses UAPI 5.
+#define KERNEL_SU_UAPI_VERSION 4
 
 /* Magic numbers for reboot hook to install fd */
 #define KSU_INSTALL_MAGIC1 0xDEADBEEF

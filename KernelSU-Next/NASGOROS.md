@@ -24,6 +24,10 @@
    `feature/kernel_umount.c`, `hook/setuid_hook.c`, `selinux/rules.c`,
    `selinux/selinux.c`, `selinux/selinux.h`, `supercall/dispatch.c`,
    `supercall/supercall.c`.
+4. `uapi/supercall.h`: `KERNEL_SU_UAPI_VERSION` reported as 4 instead of 5. The
+   released manager v3.4.0 (33294) is UAPI 4 and shows "manager version too low"
+   against UAPI 5. UAPI 5 only adds `EVENT_SERVICES`, which still works. Restore 5
+   when a released manager uses UAPI 5.
 
 ## SUSFS
 
